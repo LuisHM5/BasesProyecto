@@ -5,7 +5,7 @@
  */
 package AccesoOB;
 import Query.ProductoQRY;
-import app.Conexion;
+import conn.Conexion;
 import java.sql.Connection;
 import javax.swing.JTable;
 import setget.Producto;
@@ -18,6 +18,7 @@ public class ProductoOBJ {
     private String mensaje = "";
     private ProductoQRY pOb = new ProductoQRY();    
     private String filas []= new String[7];
+    
     public String agregarProducto(Conexion conect, Producto prod)
     {
         Connection conn = conect.getConnection();
