@@ -5,14 +5,17 @@
  */
 package Query;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
+//import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+//import java.sql.Statement;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
+import oracle.jdbc.OracleCallableStatement;
+import oracle.jdbc.OracleTypes;
 import setget.Producto;
 /**
  *
@@ -23,18 +26,18 @@ public class ProductoQRY {
     private String filasBusc[] = new String[7];
     public String agregarProducto(Connection conn, Producto prod)
     {
-        PreparedStatement pst = null;
-        String sql = "INSERT INTO PRODUCTOS (NOMBRE,DESCRIPCION,CANTIDAD,PRECIO,COSTO)"+ "VALUES(?,?,?,?,?)";
+        CallableStatement cstm = null;
+        String sql = "CALL INSERTARPRODUCTO(?,?,?,?,?)";
         try 
         {
-            pst = conn.prepareStatement(sql);
-            pst.setString(1, prod.getNombre());
-            pst.setString(2, prod.getDescripcion());
-            pst.setInt(3, prod.getCantidad());
-            pst.setDouble(4, prod.getPrecio());
-            pst.setDouble(5, prod.getCosto()); 
-            pst.execute();
-            pst.close();
+            cstm = conn.prepareCall(sql);
+            cstm.setString(1, prod.getNombre());
+            cstm.setString(2, prod.getDescripcion());
+            cstm.setInt(3, prod.getCantidad());
+            cstm.setDouble(4, prod.getPrecio());
+            cstm.setDouble(5, prod.getCosto()); 
+            cstm.execute();
+            cstm.close();
             mensaje = "Agregado con exito";
         } 
         catch (SQLException e) 
@@ -46,20 +49,19 @@ public class ProductoQRY {
     
     public String modificarProducto(Connection conn, Producto prod)
     {
-        PreparedStatement pst = null;
-        String sql = "UPDATE PRODUCTOS SET NOMBRE = ?, DESCRIPCION = ?, CANTIDAD = ?,PRECIO = ?,COSTO = ?"
-                    +"WHERE IDPRODUCTOS = ?";
+        CallableStatement cstm = null;
+        String sql = "CALL ACTUALIZARPRODUCTO(?,?,?,?,?,?)";
         try 
         {
-            pst = conn.prepareStatement(sql);
-            pst.setString(1, prod.getNombre());
-            pst.setString(2, prod.getDescripcion());
-            pst.setInt(3, prod.getCantidad());
-            pst.setDouble(4, prod.getPrecio());
-            pst.setDouble(5, prod.getCosto());            
-            pst.setInt(6, prod.getId());
-            pst.execute();
-            pst.close();
+            cstm = conn.prepareCall(sql);
+            cstm.setInt(1, prod.getId());
+            cstm.setString(2, prod.getNombre());
+            cstm.setString(3, prod.getDescripcion());
+            cstm.setInt(4, prod.getCantidad());
+            cstm.setDouble(5, prod.getPrecio());
+            cstm.setDouble(6, prod.getCosto());            
+            cstm.execute();
+            cstm.close();
             mensaje = "Actualizado con exito";
         } 
         catch (SQLException e) 
@@ -70,14 +72,14 @@ public class ProductoQRY {
     }
     public String eliminarProducto(Connection conn, int id)
     {
-        PreparedStatement pst = null;
-        String sql = "DELETE FROM PRODUCTOS "+"WHERE IDPRODUCTOS = ?";
+        CallableStatement cstm = null;
+        String sql = "CALL ELIMINARPRODUCTO(?)";
         try 
         {
-            pst = conn.prepareStatement(sql);
-            pst.setInt(1, id);           
-            pst.execute();
-            pst.close();
+            cstm = conn.prepareCall(sql);
+            cstm.setInt(1, id);           
+            cstm.execute();
+            cstm.close();
             mensaje = "Eliminado con exito";
         } 
         catch (SQLException e) 
@@ -89,15 +91,16 @@ public class ProductoQRY {
 
     public String agregarStock(Connection conn,int id,int cantActualizar)
     {
-        PreparedStatement pst = null;
-        String sql = "UPDATE PRODUCTOS SET CANTIDAD = ? "+"WHERE IDPRODUCTOS = ?";
+        CallableStatement cstm  = null;
+        
+        String sql = "CALL ACTUALIZARSTOCKPRODUCTO(?,?)";
         try 
         {
-            pst = conn.prepareStatement(sql);
-            pst.setInt(1, cantActualizar);
-            pst.setInt(2, id);
-            pst.execute();
-            pst.close();
+            cstm = conn.prepareCall(sql);
+            cstm.setInt(1, id);
+            cstm.setInt(2, cantActualizar);            
+            cstm.executeUpdate();
+            cstm.close();
             mensaje = "Stock actualizado con exito";
         } 
         catch (SQLException e) 
@@ -108,14 +111,16 @@ public class ProductoQRY {
     }
     public String [] buscarProducto(Connection conn,int id)
     {      
-        String sql = "SELECT * FROM PRODUCTOS WHERE IDPRODUCTOS = ?";
-        PreparedStatement pst = null;
-        ResultSet resu = null;
+        String sql = "CALL BUSCARPRODUCTO(?,?)";
+        CallableStatement cstm = null;
+        ResultSet resu = null;      
         try 
         {
-            pst = conn.prepareStatement(sql);
-            pst.setInt(1, id);
-            resu = pst.executeQuery(); 
+            cstm=conn.prepareCall(sql);
+            cstm.setInt(1, id);
+            cstm.registerOutParameter(2,OracleTypes.CURSOR);
+            cstm.execute();
+            resu =((OracleCallableStatement)cstm).getCursor(2);            
             if(resu.next())
             {
                 for(int i=0; i<6;i++)
@@ -137,13 +142,15 @@ public class ProductoQRY {
         model = new DefaultTableModel(null,columnas);
         String [] filas = new String[4];
         
-        String sql = "SELECT IDPRODUCTOS,NOMBRE,CANTIDAD FROM PRODUCTOS ORDER BY CANTIDAD";
-        Statement st = null;
+        String sql = "CALL LISTARSTOCK(?)";
+        CallableStatement cstm = null;
         ResultSet resu = null;
         try 
         {
-            st = conn.createStatement();
-            resu = st.executeQuery(sql);
+            cstm=conn.prepareCall(sql);
+            cstm.registerOutParameter(1,OracleTypes.CURSOR);
+            cstm.execute();
+            resu =((OracleCallableStatement)cstm).getCursor(1);
             
             while (resu.next()) {
                 for(int i=0; i<3;i++)
@@ -166,13 +173,15 @@ public class ProductoQRY {
         model = new DefaultTableModel(null,columnas);
         String [] filas = new String[5];
         
-        String sql = "SELECT IDPRODUCTOS,NOMBRE,DESCRIPCION,PRECIO FROM PRODUCTOS ORDER BY PRECIO";
-        Statement st = null;
+        String sql = "CALL LISTAPRODUCTOS(?,2)";
+        CallableStatement cstm;
         ResultSet resu = null;
         try 
         {
-            st = conn.createStatement();
-            resu = st.executeQuery(sql);
+            cstm=conn.prepareCall(sql);
+            cstm.registerOutParameter(1,OracleTypes.CURSOR);
+            cstm.execute();
+            resu =((OracleCallableStatement)cstm).getCursor(1);
             
             while (resu.next()) {
                 for(int i=0; i<4;i++)
@@ -195,14 +204,16 @@ public class ProductoQRY {
         model = new DefaultTableModel(null,columnas);
         String [] filas = new String[6];
         
-        String sql = "SELECT * FROM PRODUCTOS ORDER BY IDPRODUCTOS";
-        Statement st = null;
+        String sql = "CALL LISTAPRODUCTOS(?,1)";
+        CallableStatement cstm;
         ResultSet resu = null;
         try 
         {
-            st = conn.createStatement();
-            resu = st.executeQuery(sql);
-            
+            cstm=conn.prepareCall(sql);
+            cstm.registerOutParameter(1,OracleTypes.CURSOR);
+            cstm.execute();
+            resu =((OracleCallableStatement)cstm).getCursor(1);
+                
             while (resu.next()) {
                 for(int i=0; i<6;i++)
                 {
