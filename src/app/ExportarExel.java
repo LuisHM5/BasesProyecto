@@ -20,11 +20,15 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 public class ExportarExel {
     //throws IOException
-    public void exportarExcel(JTable t)  {       
+    public void exportarExcel(JTable t,boolean tipo)  {       
         JFileChooser chooser = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Excel", "xls");
         chooser.setFileFilter(filter);
-        chooser.setDialogTitle("Guardar archivo");
+        if(tipo)
+            chooser.setDialogTitle("Guardar productos");
+        else
+            chooser.setDialogTitle("Guardar registros");
+            
         chooser.setAcceptAllFileFilterUsed(false);
         if (chooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
             String ruta = chooser.getSelectedFile().toString().concat(".xls");
