@@ -195,6 +195,5 @@ public class ProductoOBJ {
                 //mensaje= mensaje +" "+e.getMessage();
             }
         }               
-
     }    
 }
